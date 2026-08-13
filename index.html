@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#2C2C2B" />
+<title>Cetak Struk Warung</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand">
+      <span class="dot"></span>
+      <span id="brandName">Cetak Struk Warung</span>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="buat" role="tab" aria-selected="true">Buat Struk</button>
+      <button class="tab" data-tab="riwayat" role="tab" aria-selected="false">Riwayat</button>
+      <button class="tab" data-tab="atur" role="tab" aria-selected="false">Pengaturan</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ============ TAB: BUAT STRUK ============ -->
+  <section id="tab-buat" class="panel active">
+    <div class="grid">
+
+      <!-- Form -->
+      <div class="card">
+        <div class="card-head">
+          <h2>Data transaksi</h2>
+          <button class="tautan" id="btnReset">Kosongkan</button>
+        </div>
+
+        <div class="fields">
+          <div class="f">
+            <label for="jenis">Jenis transaksi</label>
+            <select id="jenis"></select>
+          </div>
+          <div class="f">
+            <label for="bank">Bank / penyedia</label>
+            <input id="bank" placeholder="BRI" />
+          </div>
+
+          <div class="f">
+            <label for="tujuan">Nama tujuan</label>
+            <input id="tujuan" placeholder="SITI RAHMAWATI" />
+          </div>
+          <div class="f">
+            <label for="rekening">No. rekening / ID</label>
+            <input id="rekening" placeholder="3021 **** 8847" inputmode="numeric" />
+          </div>
+
+          <div class="f">
+            <label for="nominal">Nominal transaksi</label>
+            <div class="prefixed">
+              <span>Rp</span>
+              <input id="nominal" type="number" min="0" step="1000" placeholder="500000" inputmode="numeric" />
+            </div>
+          </div>
+          <div class="f">
+            <label for="admin">Biaya admin warung</label>
+            <div class="prefixed">
+              <span>Rp</span>
+              <input id="admin" type="number" min="0" step="500" placeholder="5000" inputmode="numeric" />
+            </div>
+          </div>
+
+          <div class="f">
+            <label for="referensi">No. referensi bank</label>
+            <input id="referensi" placeholder="881204773901" />
+          </div>
+          <div class="f">
+            <label for="waktu">Tanggal &amp; jam</label>
+            <input id="waktu" />
+          </div>
+
+          <div class="f">
+            <label for="noStruk">No. struk <span class="hint">(otomatis)</span></label>
+            <input id="noStruk" readonly />
+          </div>
+          <div class="f">
+            <label for="waPelanggan">No. WA pelanggan <span class="hint">(opsional)</span></label>
+            <input id="waPelanggan" placeholder="0812xxxxxxx" inputmode="tel" />
+          </div>
+        </div>
+
+        <div class="total-strip">
+          <span>Total bayar pelanggan</span>
+          <b id="totalStrip">Rp 0</b>
+        </div>
+
+        <button class="btn primary besar" id="btnWA">Kirim ke WhatsApp</button>
+
+        <div class="aksi-lain">
+          <button class="btn" id="btnTeks">Kirim versi teks</button>
+          <button class="btn" id="btnPNG">Simpan PNG</button>
+        </div>
+
+        <p class="note" id="note"></p>
+        <p class="kaki">Cetak ke printer thermal menyusul di Sprint 3.</p>
+      </div>
+
+      <!-- Pratinjau -->
+      <div class="preview-col">
+        <p class="preview-label">Pratinjau &middot; kertas 58&nbsp;mm &middot; 32 karakter</p>
+        <div class="paper">
+          <div id="struk" class="struk"></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ TAB: RIWAYAT & REKAP ============ -->
+  <section id="tab-riwayat" class="panel">
+    <div class="stack">
+
+      <div class="card">
+        <h2>Rekap</h2>
+
+        <div class="chips">
+          <button class="chip active" data-rentang="hari">Hari ini</button>
+          <button class="chip" data-rentang="minggu">7 hari</button>
+          <button class="chip" data-rentang="bulan">Bulan ini</button>
+          <button class="chip" data-rentang="semua">Semua</button>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <span>Jumlah transaksi</span>
+            <b id="stJumlah">0</b>
+          </div>
+          <div class="stat">
+            <span>Total nominal</span>
+            <b id="stNominal">Rp 0</b>
+          </div>
+          <div class="stat hijau">
+            <span>Biaya admin masuk</span>
+            <b id="stAdmin">Rp 0</b>
+          </div>
+        </div>
+
+        <h3 class="sub">Rincian per jenis</h3>
+        <div id="perJenis" class="jlist"></div>
+
+        <div class="actions">
+          <button class="btn" id="btnCsv">Export CSV</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Riwayat transaksi</h2>
+
+        <div class="f full">
+          <input id="cari" placeholder="Cari nama tujuan, no. referensi, atau no. struk" />
+        </div>
+
+        <p class="muted mini" id="jmlTampil"></p>
+        <div id="listRiwayat" class="rlist"></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ TAB: PENGATURAN ============ -->
+  <section id="tab-atur" class="panel">
+    <div class="grid">
+      <div class="card">
+        <h2>Identitas warung</h2>
+        <div class="fields">
+          <div class="f full">
+            <label for="cfgNama">Nama warung <span class="hint">(maks 16 huruf)</span></label>
+            <input id="cfgNama" maxlength="16" />
+          </div>
+          <div class="f full">
+            <label for="cfgAlamat">Alamat</label>
+            <input id="cfgAlamat" />
+          </div>
+          <div class="f">
+            <label for="cfgTelepon">No. HP</label>
+            <input id="cfgTelepon" />
+          </div>
+          <div class="f">
+            <label for="cfgKasir">Nama kasir</label>
+            <input id="cfgKasir" />
+          </div>
+          <div class="f">
+            <label for="cfgKode">Kode struk</label>
+            <input id="cfgKode" maxlength="4" />
+          </div>
+          <div class="f">
+            <label for="cfgAdmin">Biaya admin default</label>
+            <div class="prefixed">
+              <span>Rp</span>
+              <input id="cfgAdmin" type="number" min="0" step="500" />
+            </div>
+          </div>
+          <div class="f full">
+            <label for="cfgFooter">Kalimat penutup struk</label>
+            <input id="cfgFooter" />
+          </div>
+          <div class="f full">
+            <label for="cfgJenis">Jenis transaksi <span class="hint">(pisahkan dengan koma)</span></label>
+            <input id="cfgJenis" />
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn primary" id="btnSimpanCfg">Simpan pengaturan</button>
+        </div>
+        <p class="note" id="noteCfg"></p>
+      </div>
+
+      <div class="card soft">
+        <h2>Catatan</h2>
+        <p class="muted">Pengaturan disimpan di HP ini saja (<code>localStorage</code>), tidak dikirim ke mana pun.</p>
+        <p class="muted">Nomor struk berjalan otomatis dan kembali ke <b>001</b> setiap ganti hari.</p>
+        <p class="muted">Transaksi tercatat ke <b>Riwayat</b> saat struknya dikeluarkan (kirim WA / bagikan / simpan PNG), bukan saat diketik.</p>
+        <p class="muted">Setelah struk keluar, form <b>otomatis bersih</b> dan siap untuk pelanggan berikutnya. Struk lama tetap bisa dibuka lagi dari tab Riwayat.</p>
+        <p class="muted"><b>Rutin export CSV.</b> Data hanya ada di HP ini. Kalau data browser dibersihkan atau aplikasi dihapus, riwayat ikut hilang.</p>
+        <p class="muted">Tombol <b>Cetak</b> belum aktif &mdash; itu pekerjaan Sprint 3 (printer thermal).</p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script src="struk.js"></script>
+<script src="riwayat.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
