@@ -41,35 +41,32 @@
 
         <div class="fields">
           <div class="f">
-            <label for="jenis">Jenis transaksi</label>
+            <label for="jenis">Jenis layanan</label>
             <select id="jenis"></select>
           </div>
           <div class="f">
-            <label for="bank">Bank / penyedia</label>
-            <input id="bank" placeholder="BRI" />
+            <label for="bank">Penyedia</label>
+            <select id="bank"></select>
+            <input id="bankLain" class="lain" placeholder="Tulis sendiri" hidden />
           </div>
 
-          <div class="f">
-            <label for="tujuan">Nama tujuan</label>
-            <input id="tujuan" placeholder="SITI RAHMAWATI" />
-          </div>
-          <div class="f">
-            <label for="rekening">No. rekening / ID</label>
-            <input id="rekening" placeholder="3021 **** 8847" inputmode="numeric" />
-          </div>
+          <!-- Kolom di bawah ini BERUBAH OTOMATIS mengikuti jenis layanan.
+               Isinya dibentuk oleh app.js dari SKEMA di struk.js, jadi kalau
+               mau menambah layanan baru cukup ubah struk.js, HTML tidak usah. -->
+          <div id="kolomJenis" class="kolom-jenis"></div>
 
           <div class="f">
             <label for="nominal">Nominal transaksi</label>
             <div class="prefixed">
               <span>Rp</span>
-              <input id="nominal" type="number" min="0" step="1000" placeholder="500000" inputmode="numeric" />
+              <input id="nominal" placeholder="500.000" inputmode="numeric" autocomplete="off" />
             </div>
           </div>
           <div class="f">
             <label for="admin">Biaya admin warung</label>
             <div class="prefixed">
               <span>Rp</span>
-              <input id="admin" type="number" min="0" step="500" placeholder="5000" inputmode="numeric" />
+              <input id="admin" placeholder="5.000" inputmode="numeric" autocomplete="off" />
             </div>
           </div>
 
@@ -200,16 +197,12 @@
             <label for="cfgAdmin">Biaya admin default</label>
             <div class="prefixed">
               <span>Rp</span>
-              <input id="cfgAdmin" type="number" min="0" step="500" />
+              <input id="cfgAdmin" inputmode="numeric" autocomplete="off" />
             </div>
           </div>
           <div class="f full">
-            <label for="cfgFooter">Kalimat penutup struk</label>
-            <input id="cfgFooter" />
-          </div>
-          <div class="f full">
-            <label for="cfgJenis">Jenis transaksi <span class="hint">(pisahkan dengan koma)</span></label>
-            <input id="cfgJenis" />
+            <label for="cfgFooter">Catatan tambahan di kaki struk <span class="hint">(kosongkan saja kalau tidak perlu)</span></label>
+            <input id="cfgFooter" placeholder="biasanya dibiarkan kosong" />
           </div>
         </div>
 

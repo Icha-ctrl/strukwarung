@@ -143,3 +143,35 @@ Tiga perbaikan dari hasil uji di HP:
    "Kirim versi teks" sebagai cadangan.
 
 `sw.js` sekarang `v5`.
+
+## Sprint 3a — Struk per jenis layanan
+
+Empat perubahan sekaligus, semuanya berpusat di satu tempat: `SKEMA` di `struk.js`.
+
+1. **Tiap layanan punya kolom sendiri.**
+   `SKEMA` mendaftar kolom apa saja yang dibutuhkan tiap jenis layanan. Satu daftar itu
+   dipakai untuk DUA hal: membentuk kotak isian di form, dan membentuk isi struk.
+   Jadi menambah layanan baru cukup menambah satu entri di `struk.js` — HTML tidak disentuh.
+   Kode token dicetak besar di tengah (`blok: true`) dan dikelompokkan per 4 digit.
+
+2. **Penyedia jadi dropdown.**
+   Daftar bank / e-wallet / provider ikut berganti mengikuti jenis layanan. Pilihan
+   terakhir "… lainnya" membuka kotak isian bebas, jadi nama yang belum terdaftar tetap bisa dipakai.
+
+3. **Font struk tidak lagi Courier New.**
+   Tetap monospace — wajib, kalau tidak kolom angka di kanan jadi bergerigi — tapi memakai
+   font monospace bawaan sistem yang lebih halus: SF Mono di iPhone, Roboto Mono di Android,
+   Cascadia/Consolas di Windows. Tidak ada font yang diunduh, jadi tetap jalan offline.
+   Konsekuensinya lebar huruf berbeda antar HP, jadi `renderKeCanvas` sekarang MENGUKUR
+   lebar huruf pakai `measureText` lalu menyetel ukuran font supaya 32 huruf tetap pas 384 titik.
+
+4. **Kaki struk dipendekkan.** Hanya `** TRANSAKSI BERHASIL **` dan `TERIMA KASIH`.
+   Paragraf panjang bawaan versi lama dibersihkan otomatis dari localStorage lewat `FOOTER_LAMA`.
+
+Tambahan: kotak nominal dan biaya admin memberi titik ribuan otomatis saat diketik
+(`pasangRibuan`), supaya 20.000 dan 2.000 tidak tertukar. Yang disimpan tetap angka murni.
+
+`riwayat.js` sekarang menyimpan seluruh kolom khas layanan, jadi struk token listrik yang
+dibuka lagi dari Riwayat tetap lengkap dengan kode tokennya.
+
+`sw.js` sekarang `v7`.

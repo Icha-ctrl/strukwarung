@@ -29,7 +29,11 @@ function tulisTrx(daftar) {
    (misal Simpan PNG lalu Bagikan), catatannya DIPERBARUI, bukan digandakan. */
 function tambahTrx(data) {
   const daftar = bacaTrx();
-  const catatan = {
+  // Object.assign({}, data, ...) : kolom khas layanan (kode token, periode,
+  // no. meter, tarif, dst) ikut tersimpan apa adanya, supaya struk listrik
+  // yang dibuka lagi dari Riwayat tetap lengkap. Kolom di bawah menimpanya
+  // dengan versi yang sudah dibersihkan.
+  const catatan = Object.assign({}, data, {
     noStruk: data.noStruk,
     iso: new Date().toISOString(),
     waktu: data.waktu,
@@ -41,7 +45,7 @@ function tambahTrx(data) {
     nominal: Number(data.nominal) || 0,
     admin: Number(data.admin) || 0,
     total: (Number(data.nominal) || 0) + (Number(data.admin) || 0),
-  };
+  });
 
   const posisi = daftar.findIndex((t) => t.noStruk === catatan.noStruk);
   if (posisi >= 0) {

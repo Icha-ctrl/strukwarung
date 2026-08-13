@@ -8,7 +8,7 @@
    Kalau tidak, HP akan terus memakai versi lama yang tersimpan.
    ========================================================================= */
 
-const VERSI = "v6";
+const VERSI = "v7";
 const NAMA_CACHE = "struk-warung-" + VERSI;
 
 const BERKAS = [

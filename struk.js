@@ -12,12 +12,159 @@
 
 const LEBAR = 32; // jumlah karakter per baris untuk kertas 58mm
 
+/* Font struk.
+   Harus monospace (semua huruf sama lebar), kalau tidak kolom angka di
+   kanan jadi bergerigi. Tapi tidak harus Courier New yang kaku itu.
+   Daftar di bawah memakai font monospace modern bawaan tiap sistem:
+   iPhone/Mac pakai SF Mono, Android pakai Roboto Mono, Windows pakai
+   Cascadia/Consolas. Bentuknya jauh lebih halus dan bulat.
+   Tidak ada font yang diunduh, jadi aplikasi tetap jalan offline. */
+const FONT_STRUK =
+  'ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono", "Segoe UI Mono", "Roboto Mono", "DejaVu Sans Mono", Menlo, Consolas, monospace';
+
+/* =========================================================================
+   SKEMA LAYANAN
+   -------------------------------------------------------------------------
+   Tiap jenis layanan punya kolom yang berbeda. Semuanya diatur di sini,
+   dan SATU sumber ini dipakai untuk dua hal sekaligus:
+     1. Membentuk kolom di form (app.js membacanya, tidak perlu ganti HTML)
+     2. Membentuk isi struk (buildLines di bawah)
+   Mau menambah layanan baru? Cukup tambah satu entri di sini.
+
+   Arti tiap bagian:
+     penyedia     : dropdown teratas — bank, e-wallet, atau provider
+     labelNominal : nama baris uang di struk ("Nominal" / "Tagihan")
+     kolom        : daftar kolom isian
+         k     = nama kunci data (dipakai juga oleh Riwayat)
+         label = tulisan di form dan di struk
+         ph    = contoh isian
+         num   = keyboard angka di HP
+         blok  = dicetak besar di tengah struk, bukan sebaris label-nilai
+                 (dipakai untuk kode token listrik)
+   ========================================================================= */
+
+const SKEMA = {
+  Transfer: {
+    penyedia: {
+      label: "Bank tujuan",
+      opsi: ["BRI", "BCA", "BNI", "Mandiri", "BSI", "BTN", "CIMB Niaga", "Permata", "Danamon", "Bank Nagari", "SeaBank", "Jago"],
+    },
+    labelNominal: "Nominal",
+    kolom: [
+      { k: "rekening", label: "No. Rekening", ph: "3021 **** 8847", num: true },
+      { k: "tujuan", label: "Nama Penerima", ph: "SITI RAHMAWATI" },
+    ],
+  },
+
+  "Top Up E-Wallet": {
+    penyedia: {
+      label: "E-Wallet",
+      opsi: ["DANA", "OVO", "GoPay", "ShopeePay", "LinkAja", "Sakuku", "Astrapay"],
+    },
+    labelNominal: "Nominal",
+    kolom: [
+      { k: "rekening", label: "No. HP / ID", ph: "0812xxxxxxx", num: true },
+      { k: "tujuan", label: "Nama Pemilik", ph: "SITI RAHMAWATI" },
+    ],
+  },
+
+  "Token Listrik": {
+    penyedia: { label: "Penyedia", opsi: ["PLN Prabayar"] },
+    labelNominal: "Nominal",
+    kolom: [
+      { k: "rekening", label: "No. Meter", ph: "86077590163", num: true },
+      { k: "tujuan", label: "Nama Pelanggan", ph: "RAHAYU" },
+      { k: "idpel", label: "ID Pelanggan", ph: "opsional", num: true },
+      { k: "tarif", label: "Tarif / Daya", ph: "R1B / 2200 VA" },
+      { k: "kwh", label: "Jml kWh", ph: "13" },
+      { k: "token", label: "KODE TOKEN", ph: "4329103778640663 9703", num: true, blok: true },
+    ],
+  },
+
+  "PLN Pascabayar": {
+    penyedia: { label: "Penyedia", opsi: ["PLN Pascabayar"] },
+    labelNominal: "Tagihan",
+    kolom: [
+      { k: "rekening", label: "No. Pelanggan", ph: "152001372966", num: true },
+      { k: "tujuan", label: "Nama Pelanggan", ph: "IRWAN HASANI" },
+      { k: "periode", label: "Periode", ph: "JUL26" },
+      { k: "tarif", label: "Tarif / Daya", ph: "R1 / 1300 VA" },
+    ],
+  },
+
+  "Bayar Air (PAM)": {
+    penyedia: { label: "Penyedia", opsi: ["PAM Batam", "PDAM", "Air Minum Daerah"] },
+    labelNominal: "Tagihan",
+    kolom: [
+      { k: "rekening", label: "No. Pelanggan", ph: "160510", num: true },
+      { k: "tujuan", label: "Nama Pelanggan", ph: "DEDE KOSWARA" },
+      { k: "periode", label: "Periode", ph: "JUL26" },
+    ],
+  },
+
+  "Pulsa & Data": {
+    penyedia: {
+      label: "Provider",
+      opsi: ["Telkomsel", "Indosat", "XL", "Tri", "Smartfren", "Axis", "by.U"],
+    },
+    labelNominal: "Nominal",
+    kolom: [
+      { k: "rekening", label: "No. HP", ph: "0812xxxxxxx", num: true },
+      { k: "paket", label: "Paket", ph: "Pulsa 50rb / Data 10GB" },
+    ],
+  },
+
+  BPJS: {
+    penyedia: { label: "Penyedia", opsi: ["BPJS Kesehatan", "BPJS Ketenagakerjaan"] },
+    labelNominal: "Tagihan",
+    kolom: [
+      { k: "rekening", label: "No. Kartu / VA", ph: "8888801234567", num: true },
+      { k: "tujuan", label: "Nama Peserta", ph: "DEDE KOSWARA" },
+      { k: "periode", label: "Periode", ph: "1 bulan / JUL26" },
+      { k: "kwh", label: "Jml Peserta", ph: "3" },
+    ],
+  },
+
+  Lainnya: {
+    penyedia: { label: "Penyedia", opsi: [] },
+    labelNominal: "Nominal",
+    kolom: [
+      { k: "rekening", label: "No. Pelanggan", ph: "kode / nomor", num: true },
+      { k: "tujuan", label: "Nama Pelanggan", ph: "nama" },
+      { k: "periode", label: "Keterangan", ph: "opsional" },
+    ],
+  },
+};
+
+function daftarJenis() {
+  return Object.keys(SKEMA);
+}
+
+// Kalau jenisnya tidak dikenal (misal data lama), pakai skema "Lainnya"
+function skemaDari(jenis) {
+  return SKEMA[jenis] || SKEMA.Lainnya;
+}
+
 /* ---------- Alat bantu teks ---------- */
 
 // 500000 -> "Rp 500.000"
 function rupiah(angka) {
   const n = Number(angka) || 0;
   return "Rp " + n.toLocaleString("id-ID");
+}
+
+// "20000" -> "20.000" (untuk ditampilkan di kotak isian, tanpa "Rp")
+function ribuan(angka) {
+  const n = Number(angka);
+  if (!angka && angka !== 0) return "";
+  if (!isFinite(n)) return "";
+  return n.toLocaleString("id-ID");
+}
+
+// "20.000" -> 20000  (buang semua yang bukan angka)
+function angkaBersih(teks) {
+  const bersih = String(teks == null ? "" : teks).replace(/[^0-9]/g, "");
+  return bersih ? Number(bersih) : 0;
 }
 
 // Potong teks kalau kepanjangan, biar tidak merusak baris
@@ -76,6 +223,14 @@ function bungkusBaris(teks, lebar) {
   return hasil;
 }
 
+// "43291037786406639703" -> "4329 1037 7864 0663 9703"
+// Kode token 20 digit susah dibaca kalau menempel. Dikelompokkan per 4.
+function kelompok4(teks) {
+  const bersih = String(teks || "").replace(/\s+/g, "");
+  if (!/^[0-9]+$/.test(bersih)) return String(teks || "").trim();
+  return bersih.replace(/(.{4})/g, "$1 ").trim();
+}
+
 /* ---------- Pembentuk baris struk ----------
    Setiap baris berbentuk objek:
      { text: "...", bold: true/false, big: true/false, center: true/false }
@@ -104,6 +259,7 @@ function T(text, opsi) {
 function buildLines(data, cfg) {
   const baris = [];
   const tambah = (arr, opsi) => arr.forEach((t) => baris.push(T(t, opsi)));
+  const skema = skemaDari(data.jenis);
 
   /* --- Kepala struk --- */
   baris.push(T(potong(cfg.namaWarung || "WARUNG", 16), { big: true, bold: true, center: true }));
@@ -112,7 +268,7 @@ function buildLines(data, cfg) {
 
   baris.push(T("-".repeat(LEBAR)));
 
-  /* --- Jenis transaksi --- */
+  /* --- Jenis layanan --- */
   baris.push(T((data.jenis || "").toUpperCase(), { bold: true, center: true }));
   baris.push(T("-".repeat(LEBAR)));
 
@@ -121,18 +277,41 @@ function buildLines(data, cfg) {
   tambah(barisLabelNilai("Waktu", data.waktu));
   if (cfg.kasir) tambah(barisLabelNilai("Kasir", cfg.kasir));
 
-  /* --- Detail transaksi ---
-     Dikumpulkan dulu ke wadah sendiri. Kalau semuanya kosong,
-     garis pemisahnya tidak ikut dicetak (biar tidak ada garis dobel). */
+  /* --- Detail layanan ---
+     Isinya mengikuti SKEMA di atas, jadi struk listrik dan struk transfer
+     otomatis berbeda. Dikumpulkan dulu ke wadah sendiri: kalau semuanya
+     kosong, garis pemisahnya tidak ikut dicetak. */
   const detail = [];
-  if (data.tujuan) detail.push(...barisLabelNilai("Tujuan", data.tujuan));
-  if (data.rekening) detail.push(...barisLabelNilai("No. Rek/ID", data.rekening));
-  if (data.bank) detail.push(...barisLabelNilai("Bank", data.bank));
-  if (data.referensi) detail.push(...barisLabelNilai("Ref. Bank", data.referensi));
+  if (data.bank) detail.push(...barisLabelNilai(skema.penyedia.label, data.bank));
+
+  const blok = []; // kolom yang dicetak besar di tengah (kode token)
+  for (const kol of skema.kolom) {
+    const isi = String(data[kol.k] == null ? "" : data[kol.k]).trim();
+    if (!isi) continue;
+    if (kol.blok) {
+      blok.push(kol);
+      continue;
+    }
+    detail.push(...barisLabelNilai(kol.label, isi));
+  }
+
+  if (data.referensi) detail.push(...barisLabelNilai("Ref", data.referensi));
 
   if (detail.length) {
     baris.push(T("-".repeat(LEBAR)));
     tambah(detail);
+  }
+
+  /* --- Kode token, dicetak besar biar mudah dibaca pelanggan --- */
+  for (const kol of blok) {
+    baris.push(T("-".repeat(LEBAR)));
+    baris.push(T(kol.label, { center: true }));
+    // huruf dobel cuma muat 16 karakter, jadi dipecah per kelompok angka
+    tambah(bungkusBaris(kelompok4(data[kol.k]), 16), {
+      big: true,
+      bold: true,
+      center: true,
+    });
   }
 
   baris.push(T("-".repeat(LEBAR)));
@@ -142,23 +321,21 @@ function buildLines(data, cfg) {
   const admin = Number(data.admin) || 0;
   const total = nominal + admin;
 
-  tambah(barisLabelNilai("Nominal", rupiah(nominal)));
+  tambah(barisLabelNilai(skema.labelNominal || "Nominal", rupiah(nominal)));
   tambah(barisLabelNilai("Biaya layanan", rupiah(admin)));
 
   baris.push(T("=".repeat(LEBAR)));
   tambah(barisLabelNilai("TOTAL BAYAR", rupiah(total)), { bold: true });
   baris.push(T("=".repeat(LEBAR)));
 
-  /* --- Kaki struk --- */
+  /* --- Kaki struk ---
+     Sengaja pendek. Paragraf panjang bikin struk terlihat penuh dan
+     memakan kertas, padahal yang dicari pelanggan cuma dua hal:
+     transaksinya berhasil, dan ucapan terima kasih. */
   baris.push(T(""));
-  baris.push(T("TERIMA KASIH", { bold: true, center: true }));
-  tambah(
-    bungkusBaris(
-      cfg.footer ||
-        "Struk diterbitkan oleh warung sebagai bukti pembayaran termasuk biaya layanan. Bukti transaksi bank tersimpan dan dapat diminta."
-    ),
-    { center: true }
-  );
+  baris.push(T("** TRANSAKSI BERHASIL **", { bold: true, center: true }));
+  baris.push(T("TERIMA KASIH", { center: true }));
+  if (cfg.footer) tambah(bungkusBaris(cfg.footer), { center: true });
   baris.push(T(""));
 
   return baris;
@@ -201,19 +378,22 @@ function renderKeHTML(baris, wadah) {
 }
 
 /* ---------- Render ke gambar (Canvas) ----------
-   Lebar 384 piksel = standar printer thermal 58mm.
-   Courier New punya lebar huruf tepat 0.6 x ukuran font,
-   jadi font 20px -> 12px per huruf -> 32 huruf = 384px. Pas.
+   Printer thermal 58mm = 384 titik per baris, dan satu baris muat 32 huruf.
+   Dulu lebar huruf dihitung manual (Courier New tepat 0,6 x ukuran font).
+   Sekarang fontnya font sistem yang lebih halus, dan lebar hurufnya
+   berbeda-beda antar HP. Jadi lebar huruf DIUKUR dulu pakai measureText,
+   lalu ukuran fontnya disetel supaya 32 huruf pas 384 titik.
+   Hasilnya: font lebih enak dilihat, tapi kolom angka tetap lurus.
 ---------------------------------------------- */
 
 function renderKeCanvas(baris, skala) {
   skala = skala || 2; // 2x biar tajam di layar HP
 
-  const LEBAR_TEKS = 384; // area teks: 32 huruf x 12 px
+  const LEBAR_TEKS = 384; // area teks: 32 huruf
   const PAD_X = 28; // ruang kosong kiri-kanan biar tidak mepet
   const PAD_Y = 28;
-  const TINGGI_BARIS = 26;
-  const TINGGI_BARIS_BESAR = 46;
+  const TINGGI_BARIS = 27;
+  const TINGGI_BARIS_BESAR = 48;
 
   const LEBAR_PX = LEBAR_TEKS + PAD_X * 2;
 
@@ -231,10 +411,26 @@ function renderKeCanvas(baris, skala) {
   ctx.fillStyle = "#000000";
   ctx.textBaseline = "top";
 
+  // Cari ukuran font yang bikin 32 huruf pas 384 titik.
+  // Diukur sekali, dipakai untuk semua baris biasa.
+  function ukuranPas(target, hurufPerBaris, tebal) {
+    let ukuran = 20;
+    for (let i = 0; i < 6; i++) {
+      ctx.font = (tebal ? "bold " : "") + ukuran + "px " + FONT_STRUK;
+      const lebarSatu = ctx.measureText("0").width;
+      if (!lebarSatu) break;
+      ukuran = (ukuran * target) / (lebarSatu * hurufPerBaris);
+    }
+    return ukuran;
+  }
+
+  const UKURAN_NORMAL = ukuranPas(LEBAR_TEKS, LEBAR, false);
+  const UKURAN_BESAR = ukuranPas(LEBAR_TEKS, 16, true);
+
   let y = PAD_Y;
   for (const b of baris) {
-    const ukuran = b.big ? 40 : 20;
-    ctx.font = (b.bold ? "bold " : "") + ukuran + 'px "Courier New", Courier, monospace';
+    const ukuran = b.big ? UKURAN_BESAR : UKURAN_NORMAL;
+    ctx.font = (b.bold ? "bold " : "") + ukuran.toFixed(2) + "px " + FONT_STRUK;
 
     // rata tengah diukur dari lebar teks sebenarnya, bukan dari jumlah spasi
     const x = b.center

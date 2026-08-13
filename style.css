@@ -153,6 +153,14 @@ code {
 .f { display: flex; flex-direction: column; gap: 6px; }
 .f.full { grid-column: 1 / -1; }
 
+/* Wadah kolom yang berubah per jenis layanan.
+   display: contents membuat anak-anaknya ikut kolom grid induk,
+   jadi tata letaknya tetap dua kolom seperti kotak isian lainnya. */
+.kolom-jenis { display: contents; }
+
+/* Kotak isian yang muncul saat penyedia dipilih "lainnya" */
+input.lain { margin-top: 6px; }
+
 label {
   font-size: 12px;
   font-weight: 600;
@@ -470,10 +478,18 @@ input[readonly] { background: var(--soft); color: var(--text2); }
   mask: radial-gradient(6px at 6px 100%, transparent 98%, #000) repeat-x 0 0 / 12px 8px;
 }
 
+/* Font struk.
+   Tetap monospace — kalau tidak, kolom angka di kanan jadi bergerigi.
+   Tapi bukan Courier New yang kaku dan tipis itu. Daftar di bawah memakai
+   font monospace modern bawaan tiap sistem: SF Mono (iPhone/Mac),
+   Roboto Mono (Android), Cascadia/Consolas (Windows). Bentuknya lebih
+   bulat dan halus, dan tidak ada font yang perlu diunduh — tetap offline. */
 .struk {
-  font-family: "Courier New", Courier, monospace;
+  font-family: ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono",
+    "Segoe UI Mono", "Roboto Mono", "DejaVu Sans Mono", Menlo, Consolas, monospace;
   font-size: 12px;
-  line-height: 1.55;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
   color: #1A1A1A;
   white-space: pre;
   padding: 0 14px; /* jangan mepet tepi kertas */
@@ -487,7 +503,7 @@ input[readonly] { background: var(--soft); color: var(--text2); }
 .struk .sline.center { text-align: center; }
 
 .struk .sline.big {
-  font-size: 21px;
+  font-size: 20px;
   font-weight: 700;
   line-height: 1.35;
 }

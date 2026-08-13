@@ -23,16 +23,25 @@ const CFG_BAWAAN = {
   kasir: "DNA",
   kode: "DNA",
   adminDefault: 5000,
-  footer:
-    "Struk diterbitkan oleh toko sebagai bukti pembayaran termasuk biaya layanan. Bukti transaksi bank tersimpan dan dapat diminta.",
-  jenisList:
-    "Transfer, Top Up E-Wallet, Token Listrik, PLN Pascabayar, Bayar Air (PAM), Pulsa & Data, BPJS",
+  // Kaki struk sengaja dikosongkan. Struk cuma perlu "TRANSAKSI BERHASIL"
+  // dan "TERIMA KASIH" (sudah otomatis di struk.js). Paragraf panjang bikin
+  // struk terlihat penuh dan memakan kertas.
+  footer: "",
 };
+
+// Kalimat panjang bawaan versi lama. Kalau masih tersimpan di HP, dibersihkan
+// otomatis supaya struk baru ikut jadi ringkas tanpa harus disetel manual.
+const FOOTER_LAMA = [
+  "Struk diterbitkan oleh warung sebagai bukti pembayaran termasuk biaya layanan. Bukti transaksi bank tersimpan dan dapat diminta.",
+  "Struk diterbitkan oleh toko sebagai bukti pembayaran termasuk biaya layanan. Bukti transaksi bank tersimpan dan dapat diminta.",
+];
 
 function bacaCfg() {
   try {
     const mentah = localStorage.getItem(KUNCI_CFG);
-    return Object.assign({}, CFG_BAWAAN, mentah ? JSON.parse(mentah) : {});
+    const cfg = Object.assign({}, CFG_BAWAAN, mentah ? JSON.parse(mentah) : {});
+    if (FOOTER_LAMA.indexOf(cfg.footer) >= 0) cfg.footer = "";
+    return cfg;
   } catch (e) {
     return Object.assign({}, CFG_BAWAAN);
   }
@@ -99,20 +108,123 @@ function pesan(el, teks, jenis) {
   }
 }
 
+/* ---------- Titik ribuan otomatis ----------
+   Kakak sulit membedakan 20000 dan 2000 saat mengetik cepat. Jadi begitu
+   diketik, angkanya langsung dirapikan jadi 20.000 dan 2.000.
+   Yang disimpan tetap angka murni; titiknya cuma tampilan.
+------------------------------------------- */
+
+function pasangRibuan(el) {
+  el.addEventListener("input", function () {
+    const diUjung = el.selectionStart === el.value.length;
+    const kosong = el.value.trim() === "";
+    el.value = kosong ? "" : ribuan(angkaBersih(el.value));
+    // kursor dikembalikan ke ujung, kalau tidak dia melompat saat titik masuk
+    if (diUjung) el.setSelectionRange(el.value.length, el.value.length);
+  });
+}
+
+/* ---------- Kolom yang berubah per jenis layanan ----------
+   Bentuk kolomnya dibaca dari SKEMA di struk.js. Jadi struk listrik minta
+   No. Meter dan Kode Token, sedangkan transfer minta No. Rekening.
+   Tidak ada HTML yang perlu diubah kalau nanti menambah layanan baru.
+--------------------------------------------------------- */
+
+const PENYEDIA_LAIN = "… lainnya";
+
+function gambarKolomJenis(nilaiAwal) {
+  const wadah = $("kolomJenis");
+  const isiLama = {};
+
+  if (nilaiAwal) {
+    Object.assign(isiLama, nilaiAwal);
+  } else {
+    // pindah jenis layanan: isian yang sudah diketik jangan sampai hilang
+    wadah.querySelectorAll("input").forEach(function (el) {
+      isiLama[el.dataset.k] = el.value;
+    });
+  }
+
+  wadah.innerHTML = "";
+  skemaDari($("jenis").value).kolom.forEach(function (kol) {
+    const f = document.createElement("div");
+    f.className = "f" + (kol.blok ? " full" : "");
+
+    const lab = document.createElement("label");
+    lab.setAttribute("for", "kol-" + kol.k);
+    lab.textContent = kol.label;
+
+    const inp = document.createElement("input");
+    inp.id = "kol-" + kol.k;
+    inp.dataset.k = kol.k;
+    inp.placeholder = kol.ph || "";
+    inp.autocomplete = "off";
+    if (kol.num) inp.setAttribute("inputmode", "numeric");
+    inp.value = isiLama[kol.k] == null ? "" : isiLama[kol.k];
+
+    f.appendChild(lab);
+    f.appendChild(inp);
+    wadah.appendChild(f);
+  });
+}
+
+function aturPenyediaLain() {
+  const lain = $("bank").value === PENYEDIA_LAIN;
+  $("bankLain").hidden = !lain;
+  if (lain) $("bankLain").focus();
+}
+
+function isiPilihanBank(pilih) {
+  const sel = $("bank");
+  const skema = skemaDari($("jenis").value);
+  const label = document.querySelector('label[for="bank"]');
+  if (label) label.textContent = skema.penyedia.label;
+
+  sel.innerHTML = "";
+  skema.penyedia.opsi.forEach(function (nama) {
+    const opt = document.createElement("option");
+    opt.textContent = nama;
+    sel.appendChild(opt);
+  });
+  const opt = document.createElement("option");
+  opt.textContent = PENYEDIA_LAIN;
+  sel.appendChild(opt);
+
+  if (pilih && skema.penyedia.opsi.indexOf(pilih) >= 0) {
+    sel.value = pilih;
+    $("bankLain").value = "";
+  } else if (pilih) {
+    sel.value = PENYEDIA_LAIN;
+    $("bankLain").value = pilih;
+  }
+  aturPenyediaLain();
+}
+
+function penyediaAktif() {
+  return $("bank").value === PENYEDIA_LAIN
+    ? $("bankLain").value.trim()
+    : $("bank").value;
+}
+
 /* ---------- 3. Pratinjau ---------- */
 
 function ambilData() {
-  return {
-    jenis: $("jenis").value,
-    bank: $("bank").value.trim(),
-    tujuan: $("tujuan").value.trim(),
-    rekening: $("rekening").value.trim(),
-    nominal: $("nominal").value,
-    admin: $("admin").value,
+  const jenis = $("jenis").value;
+  const data = {
+    jenis: jenis,
+    bank: penyediaAktif(),
+    nominal: angkaBersih($("nominal").value),
+    admin: angkaBersih($("admin").value),
     referensi: $("referensi").value.trim(),
     waktu: $("waktu").value.trim(),
     noStruk: $("noStruk").value,
   };
+  // kolom khas layanan ini (no. pelanggan, nama, periode, kode token, dst)
+  skemaDari(jenis).kolom.forEach(function (kol) {
+    const el = $("kol-" + kol.k);
+    data[kol.k] = el ? el.value.trim() : "";
+  });
+  return data;
 }
 
 function perbarui() {
@@ -247,12 +359,11 @@ function selesaikanStruk(kabar) {
 
 /* Dipanggil dari layar Riwayat: tampilkan ulang struk lama di form */
 function bukaTrx(t) {
-  $("jenis").value = t.jenis || $("jenis").value;
-  $("bank").value = t.bank || "";
-  $("tujuan").value = t.tujuan || "";
-  $("rekening").value = t.rekening || "";
-  $("nominal").value = t.nominal || "";
-  $("admin").value = t.admin || 0;
+  if (t.jenis && SKEMA[t.jenis]) $("jenis").value = t.jenis;
+  isiPilihanBank(t.bank || "");
+  gambarKolomJenis(t); // isi kolom khas layanan dari catatan riwayat
+  $("nominal").value = ribuan(t.nominal || "");
+  $("admin").value = ribuan(t.admin || 0);
   $("referensi").value = t.referensi || "";
   $("waktu").value = t.waktu || "";
   $("noStruk").value = t.noStruk;
@@ -267,13 +378,16 @@ function bukaTrx(t) {
 }
 
 function transaksiBaru() {
-  ["bank", "tujuan", "rekening", "nominal", "referensi", "waPelanggan"].forEach((id) => ($(id).value = ""));
-  $("admin").value = CFG.adminDefault;
+  ["nominal", "referensi", "waPelanggan", "bankLain"].forEach((id) => ($(id).value = ""));
+  isiPilihanBank("");
+  gambarKolomJenis({}); // kolom khas layanan dikosongkan
+  $("admin").value = ribuan(CFG.adminDefault);
   $("waktu").value = waktuSekarang();
   nomorAktif = nomorStrukBaru();
   $("noStruk").value = nomorAktif.teks;
   perbarui();
-  $("tujuan").focus();
+  const pertama = $("kolomJenis").querySelector("input");
+  if (pertama) pertama.focus();
 }
 
 /* ---------- Pengaturan: isi & simpan form ---------- */
@@ -284,16 +398,18 @@ function isiFormCfg() {
   $("cfgTelepon").value = CFG.telepon;
   $("cfgKasir").value = CFG.kasir;
   $("cfgKode").value = CFG.kode;
-  $("cfgAdmin").value = CFG.adminDefault;
+  $("cfgAdmin").value = ribuan(CFG.adminDefault);
   $("cfgFooter").value = CFG.footer;
-  $("cfgJenis").value = CFG.jenisList;
 }
 
+// Daftar jenis layanan diambil dari SKEMA di struk.js, bukan diketik manual.
+// Alasannya: tiap jenis punya kolom sendiri, jadi menambah nama lewat
+// pengaturan saja tidak cukup — kolomnya juga harus didefinisikan.
 function isiPilihanJenis() {
   const sel = $("jenis");
   const terpilih = sel.value;
   sel.innerHTML = "";
-  CFG.jenisList.split(",").map((s) => s.trim()).filter(Boolean).forEach(function (j) {
+  daftarJenis().forEach(function (j) {
     const opt = document.createElement("option");
     opt.textContent = j;
     sel.appendChild(opt);
@@ -308,9 +424,8 @@ function simpanFormCfg() {
     telepon: $("cfgTelepon").value.trim(),
     kasir: $("cfgKasir").value.trim(),
     kode: ($("cfgKode").value.trim() || "ST").toUpperCase(),
-    adminDefault: Number($("cfgAdmin").value) || 0,
+    adminDefault: angkaBersih($("cfgAdmin").value),
     footer: $("cfgFooter").value.trim(),
-    jenisList: $("cfgJenis").value.trim() || CFG_BAWAAN.jenisList,
   };
   simpanCfg(CFG);
   isiPilihanJenis();
@@ -338,10 +453,26 @@ document.querySelectorAll(".tab").forEach(function (tombol) {
 
 /* ---------- Pasang semua listener ---------- */
 
-["jenis", "bank", "tujuan", "rekening", "nominal", "admin", "referensi", "waktu"].forEach(function (id) {
+["bank", "bankLain", "nominal", "admin", "referensi", "waktu"].forEach(function (id) {
   $(id).addEventListener("input", perbarui);
   $(id).addEventListener("change", perbarui);
 });
+
+// Kolom khas layanan dibuat ulang setiap ganti jenis, jadi listener-nya
+// dipasang di wadahnya (satu kali) bukan di tiap kotak isian.
+$("kolomJenis").addEventListener("input", perbarui);
+
+$("jenis").addEventListener("change", function () {
+  isiPilihanBank("");
+  gambarKolomJenis();
+  perbarui();
+});
+
+$("bank").addEventListener("change", aturPenyediaLain);
+
+pasangRibuan($("nominal"));
+pasangRibuan($("admin"));
+pasangRibuan($("cfgAdmin"));
 
 $("btnPNG").addEventListener("click", simpanPNG);
 $("btnWA").addEventListener("click", kirimWA);
