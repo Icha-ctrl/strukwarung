@@ -158,6 +158,19 @@ code {
    jadi tata letaknya tetap dua kolom seperti kotak isian lainnya. */
 .kolom-jenis { display: contents; }
 
+/* Kartu "isi otomatis dari struk bank" */
+.scan {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  margin-bottom: 18px;
+  background: var(--blue-soft);
+  border: 1px solid #CFE6F9;
+  border-radius: 10px;
+}
+.scan .hint { display: block; margin-top: 2px; }
+
 /* Kotak isian yang muncul saat penyedia dipilih "lainnya" */
 input.lain { margin-top: 6px; }
 

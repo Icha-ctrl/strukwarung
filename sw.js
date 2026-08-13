@@ -18,6 +18,7 @@ const BERKAS = [
   "./struk.js",
   "./riwayat.js",
   "./app.js",
+  "./ocr.js",
   "./manifest.json",
   "./icon-192.png",
   "./icon-512.png",

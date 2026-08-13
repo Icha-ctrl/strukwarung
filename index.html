@@ -39,6 +39,20 @@
           <button class="tautan" id="btnReset">Kosongkan</button>
         </div>
 
+              <div class="scan">
+          <div>
+            <b>Isi otomatis dari struk bank</b>
+            <span class="hint">foto atau screenshot — hasilnya tetap harus dicek</span>
+          </div>
+          <div class="aksi-lain">
+            <button class="btn" id="btnKamera" type="button">Foto struk</button>
+            <button class="btn" id="btnGaleri" type="button">Pilih dari galeri</button>
+          </div>
+          <input id="fotoKamera" type="file" accept="image/*" capture="environment" hidden />
+          <input id="fotoGaleri" type="file" accept="image/*" hidden />
+          <p class="note" id="noteOcr"></p>
+        </div>
+
         <div class="fields">
           <div class="f">
             <label for="noStruk">No. struk <span class="hint">(otomatis)</span></label>
@@ -193,6 +207,14 @@
             <label for="cfgKode">Kode struk</label>
             <input id="cfgKode" maxlength="4" />
           </div>
+                    <div class="f full">
+            <label for="cfgKunci">Kunci Gemini untuk baca struk <span class="hint">(disimpan di HP ini saja, tidak ikut ke GitHub)</span></label>
+            <input id="cfgKunci" placeholder="AIza…" autocomplete="off" spellcheck="false" />
+            <div class="aksi-lain">
+              <button class="btn" id="btnSimpanKunci" type="button">Simpan kunci</button>
+            </div>
+            <p class="note" id="noteKunci"></p>
+          </div>
           <div class="f">
             <label for="cfgAdmin">Biaya admin default</label>
             <div class="prefixed">
@@ -229,5 +251,6 @@
 <script src="struk.js"></script>
 <script src="riwayat.js"></script>
 <script src="app.js"></script>
+<script src="ocr.js"></script>
 </body>
 </html>
