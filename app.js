@@ -109,8 +109,7 @@ function pesan(el, teks, jenis) {
 }
 
 /* ---------- Titik ribuan otomatis ----------
-   Kakak sulit membedakan 20000 dan 2000 saat mengetik cepat. Jadi begitu
-   diketik, angkanya langsung dirapikan jadi 20.000 dan 2.000.
+   Angkanya langsung dirapikan jadi 20.000 dan 2.000.
    Yang disimpan tetap angka murni; titiknya cuma tampilan.
 ------------------------------------------- */
 
